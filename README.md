@@ -3,7 +3,7 @@
 This contains bindings to use [Wintun](https://www.wintun.net) from Go.
 
 ```go
-import "golang.zx2c4.com/wintun"
+import "github.com/koomox/wintun-go"
 ```
 
-- [Documentation](https://pkg.go.dev/golang.zx2c4.com/wintun)
+- [Documentation](https://pkg.go.dev/github.com/koomox/wintun-go)

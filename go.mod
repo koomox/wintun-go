@@ -1,4 +1,4 @@
-module golang.zx2c4.com/wintun
+module github.com/koomox/wintun-go
 
 go 1.17
 

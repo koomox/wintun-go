@@ -9,6 +9,7 @@ package wintun
 
 import (
 	"fmt"
+	"path"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -89,7 +90,7 @@ func (d *lazyDLL) Load() error {
 	var err error
 
 	if d.libraryDir != "" {
-		module, err := windows.LoadLibraryEx(path.Join(d.libraryDir, d.Name), 0, 0)
+		module, err = windows.LoadLibraryEx(path.Join(d.libraryDir, d.Name), 0, 0)
 	}
 
 	if module == 0 || err != nil {

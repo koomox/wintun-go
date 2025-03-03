@@ -1,4 +1,4 @@
-package embedded
+package wintun
 
 import (
 	"bytes"

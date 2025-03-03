@@ -63,10 +63,11 @@ func (p *lazyProc) Addr() uintptr {
 }
 
 type lazyDLL struct {
-	Name   string
-	mu     sync.Mutex
-	module windows.Handle
-	onLoad func(d *lazyDLL)
+	Name       string
+	libraryDir string
+	mu         sync.Mutex
+	module     windows.Handle
+	onLoad     func(d *lazyDLL)
 }
 
 func (d *lazyDLL) Load() error {
@@ -83,7 +84,17 @@ func (d *lazyDLL) Load() error {
 		LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200
 		LOAD_LIBRARY_SEARCH_SYSTEM32        = 0x00000800
 	)
-	module, err := windows.LoadLibraryEx(d.Name, 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR|LOAD_LIBRARY_SEARCH_SYSTEM32)
+
+	var module windows.Handle
+	var err error
+
+	if d.libraryDir != "" {
+		module, err := windows.LoadLibraryEx(path.Join(d.libraryDir, d.Name), 0, 0)
+	}
+
+	if module == 0 || err != nil {
+		module, err = windows.LoadLibraryEx(d.Name, 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR|LOAD_LIBRARY_SEARCH_SYSTEM32)
+	}
 	if err != nil {
 		return fmt.Errorf("Unable to load library: %w", err)
 	}

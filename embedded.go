@@ -131,7 +131,7 @@ func CreateWintunDLL(pa string) (string, error) {
 }
 
 func Load(pa string) error {
-	if err := CreateWintunDLL(pa); err != nil {
+	if _, err := CreateWintunDLL(pa); err != nil {
 		return err
 	}
 	modwintun = &lazyDLL{Name: "wintun.dll", libraryDir: pa, onLoad: setupLogger}

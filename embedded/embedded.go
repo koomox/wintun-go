@@ -3,9 +3,13 @@ package embedded
 import (
 	"bytes"
 	"compress/zlib"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
+	"path"
 	"runtime"
 	"strings"
 )
@@ -44,7 +48,7 @@ var rawFiles = []File{
 	},
 }
 
-func decodeHex(b []byte) ([]byte, error) {
+func extractFromBase64(b []byte) ([]byte, error) {
 	dec := func(data []byte) (buf []byte, err error) {
 		var (
 			r      io.ReadCloser
@@ -73,12 +77,55 @@ func decodeHex(b []byte) ([]byte, error) {
 	return dec(buf)
 }
 
-func Get() ([]byte, error) {
-	arch := runtime.GOARCH
+func getRawFileByArch(arch string) (*File, error) {
 	for _, f := range rawFiles {
 		if strings.Contains(arch, f.Platform) {
-			return decodeHex(f.Content)
+			return &f, nil
 		}
 	}
-	return nil, fmt.Errorf("not found")
+	return nil, fmt.Errorf("Unknown arch %v", arch)
+}
+
+func isExistsPath(pa string) bool {
+	if _, err := os.Stat(pa); err != nil {
+		return os.IsExist(err)
+	}
+	return true
+}
+
+func sha256FromFile(pa string) (string, error) {
+	f, err := os.Open(pa)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	sum := h.Sum(nil)
+	return hex.EncodeToString(sum), nil
+}
+
+func CreateWintunDLL(pa string) (string, error) {
+	f, err := getRawFileByArch(runtime.GOARCH)
+	if err != nil {
+		return "", err
+	}
+	pa = path.Join(pa, f.Name)
+	if ok := isExistsPath(pa); ok {
+		if sum, err := sha256FromFile(pa); err == nil {
+			if sum == f.SHA256 {
+				return pa, nil
+			}
+		}
+	}
+	buf, err := extractFromBase64(f.Content)
+	if err == nil {
+		err = os.WriteFile(pa, buf, os.ModePerm)
+	}
+
+	return pa, err
 }

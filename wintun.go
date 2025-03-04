@@ -8,6 +8,7 @@
 package wintun
 
 import (
+	"crypto/sha1"
 	"log"
 	"runtime"
 	"syscall"
@@ -164,4 +165,20 @@ func RunningVersion() (version uint32, err error) {
 func (wintun *Adapter) LUID() (luid uint64) {
 	syscall.SyscallN(procWintunGetAdapterLUID.Addr(), uintptr(wintun.handle), uintptr(unsafe.Pointer(&luid)))
 	return
+}
+
+func GenerateGUIDFromName(name string) *windows.GUID {
+	hash := sha1.Sum([]byte(name))
+
+	guid := windows.GUID{
+		Data1: uint32(hash[0]) | uint32(hash[1])<<8 | uint32(hash[2])<<16 | uint32(hash[3])<<24,
+		Data2: uint16(hash[4]) | uint16(hash[5])<<8,
+		Data3: uint16(hash[6]) | uint16(hash[7])<<8,
+		Data4: [8]byte{hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]},
+	}
+
+	guid.Data3 = (guid.Data3 & 0x0FFF) | 0x5000
+	guid.Data4[0] = (guid.Data4[0] & 0x3F) | 0x80
+
+	return &guid
 }
